@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to Speech</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        textarea, select, button {
+            margin-bottom: 10px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+        }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Text-to-Speech</h1>
+    <label for="text">Enter Text:</label>
+    <textarea id="text" placeholder="Enter text here..."></textarea>
+
+    <label for="language">Select Language:</label>
+    <select id="language">
+        <option value="en">English</option>
+        <option value="es">Spanish</option>
+        <option value="fr">French</option>
+        <option value="de">German</option>
+        <option value="it">Italian</option>
+        <option value="ja">Japanese</option>
+        <option value="ko">Korean</option>
+    </select>
+
+    <br><br>
+
+    <button onclick="textToSpeech()">Speak</button>
+    <button onclick="saveAudio()">Save as File</button>
+
+    <p id="status"></p>
+
+    <script>
+        async function textToSpeech() {
+            const text = document.getElementById('text').value;
+            const language = document.getElementById('language').value;
+            if (!text.trim()) {
+                alert('Please enter some text.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/text_to_speech', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `text=${encodeURIComponent(text)}&language=${encodeURIComponent(language)}`
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const audio = new Audio(url);
+                    audio.play();
+                } else {
+                    const error = await response.json();
+                    alert(error.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request.');
+            }
+        }
+
+    async function saveAudio() {
+    const text = document.getElementById('text').value;
+    const language = document.getElementById('language').value;
+
+    if (!text.trim()) {
+        alert('Please enter some text.');
+        return;
+    }
+
+    try {
+        const response = await fetch('/text_to_speech', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `text=${encodeURIComponent(text)}&language=${encodeURIComponent(language)}`
+        });
+
+        if (response.ok) {
+            const blob = await response.blob(); // Get the MP3 file as a blob
+
+            if ('showSaveFilePicker' in window) {
+                // Use the File System Access API for browsers that support it
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: 'converted_speech.mp3',  // Default file name
+                    types: [{
+                        description: 'MP3 Files',
+                        accept: { 'audio/mpeg': ['.mp3'] }
+                    }]
+                });
+
+                const writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                alert('Audio file has been saved successfully.');
+            } else {
+                // Fallback for browsers that do not support the File System Access API
+                const url = URL.createObjectURL(blob); // Create a downloadable URL
+
+                const a = document.createElement('a');  // Create an invisible link
+                a.href = url;
+                a.download = 'converted_speech.mp3'; // Set the default filename
+                document.body.appendChild(a);
+                a.click(); // Trigger the download
+                document.body.removeChild(a); // Remove link after download
+
+                URL.revokeObjectURL(url); // Clean up object URL after download
+                alert('Audio file has been downloaded.');
+            }
+        } else {
+            const error = await response.json();
+            alert(error.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while processing your request.');
+    }
+}
+
+    </script>
+</body>
+</html>
