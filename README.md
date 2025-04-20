@@ -13,7 +13,7 @@ A simple desktop and web application that converts typed text into spoken words 
 3. For the desktop version, run:
    ```bash
    python app.py
-4. For the app version, run:
+4. For the web version, run:
    ```bash
    python web-app.py
 
